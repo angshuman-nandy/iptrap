@@ -54,6 +54,29 @@ const COLUMNS = [
   { key: "geo_isp", label: "ISP" },
 ];
 
+// One row per unique IP: count + first/last seen, geo fields taken from
+// the most recent visit from that IP. Keeps the same field names as a
+// plain visit row (ts = last seen) so sorting/columns can treat both
+// grouped and ungrouped rows the same way.
+function groupByIp(visits) {
+  const byIp = new Map();
+  for (const v of visits) {
+    if (!byIp.has(v.ip)) byIp.set(v.ip, []);
+    byIp.get(v.ip).push(v);
+  }
+  return [...byIp.entries()].map(([ip, vs]) => {
+    const byTsDesc = [...vs].sort((a, b) => b.ts - a.ts);
+    const latest = byTsDesc[0];
+    return {
+      ...latest,
+      ip,
+      count: vs.length,
+      firstSeen: Math.min(...vs.map((v) => v.ts)),
+      visits: byTsDesc,
+    };
+  });
+}
+
 export default function Admin() {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState(null);
@@ -66,6 +89,8 @@ export default function Admin() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState("ts");
   const [sortDir, setSortDir] = useState("desc");
+  const [grouped, setGrouped] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState(() => new Set());
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearPassword, setClearPassword] = useState("");
   const [clearError, setClearError] = useState("");
@@ -160,6 +185,15 @@ export default function Admin() {
     });
   }
 
+  function toggleGroupExpanded(ip) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(ip)) next.delete(ip);
+      else next.add(ip);
+      return next;
+    });
+  }
+
   function toggleSort(key) {
     if (sortKey === key) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -177,16 +211,24 @@ export default function Admin() {
     );
   }, [visits, search]);
 
+  const displayRows = useMemo(
+    () => (grouped ? groupByIp(filtered) : filtered),
+    [filtered, grouped]
+  );
+
   const sorted = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
-    return [...filtered].sort((a, b) => {
+    return [...displayRows].sort((a, b) => {
       const av = a[sortKey] ?? "";
       const bv = b[sortKey] ?? "";
       if (av < bv) return -1 * dir;
       if (av > bv) return 1 * dir;
       return 0;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [displayRows, sortKey, sortDir]);
+
+  // expand col + COLUMNS + (Visits, only when grouped) + Zip/Coordinates/Org/ASN/Language/Referer/User agent
+  const colCount = 1 + COLUMNS.length + (grouped ? 1 : 0) + 7;
 
   const dayCounts = useMemo(() => visitsByDay(visits), [visits]);
   const topCountries = useMemo(() => rankedCounts(visits, "geo_country"), [visits]);
@@ -296,8 +338,18 @@ export default function Admin() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <label className="group-toggle">
+          <input
+            type="checkbox"
+            checked={grouped}
+            onChange={(e) => setGrouped(e.target.checked)}
+          />
+          Group by IP
+        </label>
         <span className="result-count">
-          {sorted.length} of {visits.length}
+          {grouped
+            ? `${sorted.length} unique IP${sorted.length === 1 ? "" : "s"} (${filtered.length} visits)`
+            : `${sorted.length} of ${visits.length}`}
         </span>
       </div>
 
@@ -312,6 +364,12 @@ export default function Admin() {
                   {sortKey === c.key && (sortDir === "asc" ? " ▲" : " ▼")}
                 </th>
               ))}
+              {grouped && (
+                <th className="sortable" onClick={() => toggleSort("count")}>
+                  Visits
+                  {sortKey === "count" && (sortDir === "asc" ? " ▲" : " ▼")}
+                </th>
+              )}
               <th>Zip</th>
               <th>Coordinates</th>
               <th>Org</th>
@@ -322,67 +380,173 @@ export default function Admin() {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((v) => {
-              const isOpen = expanded.has(v.id);
-              const isSelected = v.id === selectedId;
-              const hasCoords = v.geo_lat != null && v.geo_lon != null;
-              return (
-                <Fragment key={v.id}>
-                  <tr
-                    className={isSelected ? "row-selected" : ""}
-                    onClick={() => setSelectedId(v.id)}
-                  >
-                    <td>
-                      <button
-                        className="expand-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleExpanded(v.id);
-                        }}
-                        title="Show raw request headers"
-                      >
-                        {isOpen ? "▾" : "▸"}
-                      </button>
-                    </td>
-                    <td>{new Date(v.ts * 1000).toLocaleString()}</td>
-                    <td>{v.ip}</td>
-                    <td>{v.geo_country}</td>
-                    <td>{v.geo_city}</td>
-                    <td>{v.geo_isp}</td>
-                    <td>{v.geo_zip}</td>
-                    <td>
-                      {hasCoords ? (
-                        <a
-                          href={`https://www.google.com/maps?q=${v.geo_lat},${v.geo_lon}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {v.geo_lat.toFixed(2)}, {v.geo_lon.toFixed(2)}
-                        </a>
-                      ) : (
-                        ""
-                      )}
-                    </td>
-                    <td>{v.geo_org}</td>
-                    <td>{v.geo_as}</td>
-                    <td>{v.accept_language}</td>
-                    <td className="ellipsis">{v.referer}</td>
-                    <td className="ellipsis">{v.user_agent}</td>
-                  </tr>
-                  {isOpen && (
-                    <tr className="detail-row">
-                      <td colSpan={COLUMNS.length + 8}>
-                        <JsonView data={JSON.parse(v.headers_json || "{}")} />
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              );
-            })}
+            {sorted.map((v) =>
+              grouped ? (
+                <GroupRow
+                  key={v.ip}
+                  group={v}
+                  isOpen={expandedGroups.has(v.ip)}
+                  onToggle={() => toggleGroupExpanded(v.ip)}
+                  expanded={expanded}
+                  onToggleVisit={toggleExpanded}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                  colCount={colCount}
+                />
+              ) : (
+                <VisitRow
+                  key={v.id}
+                  v={v}
+                  isOpen={expanded.has(v.id)}
+                  onToggle={() => toggleExpanded(v.id)}
+                  isSelected={v.id === selectedId}
+                  onSelect={() => setSelectedId(v.id)}
+                  colSpan={colCount}
+                />
+              )
+            )}
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// A single visit's row + its optional raw-headers detail row. `showCount`
+// renders the "Visits" cell used when this row sits inside an expanded
+// group (grouped mode); standalone rows in ungrouped mode omit it since
+// there's no "Visits" column in that mode.
+function VisitRow({ v, isOpen, onToggle, isSelected, onSelect, colSpan }) {
+  const hasCoords = v.geo_lat != null && v.geo_lon != null;
+  return (
+    <Fragment>
+      <tr className={isSelected ? "row-selected" : ""} onClick={onSelect}>
+        <td>
+          <button
+            className="expand-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            title="Show raw request headers"
+          >
+            {isOpen ? "▾" : "▸"}
+          </button>
+        </td>
+        <td>{new Date(v.ts * 1000).toLocaleString()}</td>
+        <td>{v.ip}</td>
+        <td>{v.geo_country}</td>
+        <td>{v.geo_city}</td>
+        <td>{v.geo_isp}</td>
+        <td>{v.geo_zip}</td>
+        <td>
+          {hasCoords ? (
+            <a
+              href={`https://www.google.com/maps?q=${v.geo_lat},${v.geo_lon}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {v.geo_lat.toFixed(2)}, {v.geo_lon.toFixed(2)}
+            </a>
+          ) : (
+            ""
+          )}
+        </td>
+        <td>{v.geo_org}</td>
+        <td>{v.geo_as}</td>
+        <td>{v.accept_language}</td>
+        <td className="ellipsis">{v.referer}</td>
+        <td className="ellipsis">{v.user_agent}</td>
+      </tr>
+      {isOpen && (
+        <tr className="detail-row">
+          <td colSpan={colSpan}>
+            <JsonView data={JSON.parse(v.headers_json || "{}")} />
+          </td>
+        </tr>
+      )}
+    </Fragment>
+  );
+}
+
+// One row per unique IP. Expanding it reveals every individual visit from
+// that IP as its own nested mini-table, each still able to show its raw
+// headers via the same expand mechanism as ungrouped mode.
+function GroupRow({ group, isOpen, onToggle, expanded, onToggleVisit, selectedId, onSelect, colCount }) {
+  const hasCoords = group.geo_lat != null && group.geo_lon != null;
+  return (
+    <Fragment>
+      <tr className={group.id === selectedId ? "row-selected" : ""} onClick={() => onSelect(group.id)}>
+        <td>
+          <button
+            className="expand-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            title="Show individual visits from this IP"
+          >
+            {isOpen ? "▾" : "▸"}
+          </button>
+        </td>
+        <td>{new Date(group.ts * 1000).toLocaleString()}</td>
+        <td>{group.ip}</td>
+        <td>{group.geo_country}</td>
+        <td>{group.geo_city}</td>
+        <td>{group.geo_isp}</td>
+        <td>{group.count}</td>
+        <td>{group.geo_zip}</td>
+        <td>
+          {hasCoords ? (
+            <a
+              href={`https://www.google.com/maps?q=${group.geo_lat},${group.geo_lon}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {group.geo_lat.toFixed(2)}, {group.geo_lon.toFixed(2)}
+            </a>
+          ) : (
+            ""
+          )}
+        </td>
+        <td>{group.geo_org}</td>
+        <td>{group.geo_as}</td>
+        <td>{group.accept_language}</td>
+        <td className="ellipsis">{group.referer}</td>
+        <td className="ellipsis">{group.user_agent}</td>
+      </tr>
+      {isOpen && (
+        <tr className="detail-row">
+          <td colSpan={colCount}>
+            <div className="nested-visits">
+              {group.visits.map((v) => (
+                <VisitRowNested
+                  key={v.id}
+                  v={v}
+                  isOpen={expanded.has(v.id)}
+                  onToggle={() => onToggleVisit(v.id)}
+                />
+              ))}
+            </div>
+          </td>
+        </tr>
+      )}
+    </Fragment>
+  );
+}
+
+function VisitRowNested({ v, isOpen, onToggle }) {
+  return (
+    <div className="nested-visit">
+      <div className="nested-visit-row" onClick={onToggle}>
+        <button className="expand-btn" title="Show raw request headers">
+          {isOpen ? "▾" : "▸"}
+        </button>
+        <span>{new Date(v.ts * 1000).toLocaleString()}</span>
+      </div>
+      {isOpen && <JsonView data={JSON.parse(v.headers_json || "{}")} />}
     </div>
   );
 }

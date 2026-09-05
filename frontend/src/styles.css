@@ -236,6 +236,46 @@ button:disabled { opacity: 0.6; cursor: default; }
   white-space: nowrap;
 }
 
+.group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #c3c2b7;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.group-toggle input { cursor: pointer; }
+
+.nested-visits {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nested-visit {
+  border-left: 2px solid #2a2b2e;
+  padding-left: 10px;
+}
+
+.nested-visit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 3px 0;
+  font-size: 0.85rem;
+  color: #c3c2b7;
+}
+
+.nested-visit-row:hover { color: #ffffff; }
+
+.nested-visit .json-view {
+  margin: 0 0 6px 26px;
+  max-width: 700px;
+}
+
 th.sortable {
   cursor: pointer;
   user-select: none;
