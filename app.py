@@ -21,7 +21,9 @@ import io
 import json
 import os
 import sqlite3
+import sys
 import time
+import traceback
 from contextlib import closing
 from pathlib import Path
 
@@ -51,7 +53,9 @@ app = FastAPI()
 # --------------------------------------------------------------------------
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    # busy_timeout so concurrent requests wait briefly for a lock instead of
+    # immediately raising "database is locked" (Python's sqlite3 default is 0).
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -287,11 +291,27 @@ def serve_index() -> FileResponse:
 
 @app.get("/")
 async def root(request: Request):
-    record_visit(request)
-    return serve_index()
+    try:
+        record_visit(request)
+    except Exception:
+        # Logging must never break the page a visitor sees — but a swallowed
+        # failure here is exactly what silent under-logging looks like, so
+        # print it to stderr (visible in `docker logs` / the Space's Logs tab).
+        print("record_visit failed:", file=sys.stderr)
+        traceback.print_exc()
+    response = serve_index()
+    # Without this, browsers can serve "/" from their own cache on a repeat
+    # visit and never hit the server at all — silently skipping the log.
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/admin")
 async def admin_page():
     # No visit logging here — this is the operator's own page, not visitor traffic.
-    return serve_index()
+    response = serve_index()
+    # Avoid a stale cached index.html referencing JS/CSS asset hashes that no
+    # longer exist after a redeploy (was the suspected cause of an earlier
+    # blank-page report).
+    response.headers["Cache-Control"] = "no-store"
+    return response
