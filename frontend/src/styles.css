@@ -157,11 +157,38 @@ button:disabled { opacity: 0.6; cursor: default; }
   padding: 1rem;
 }
 
+.panel.panel-collapsed { padding-bottom: 0; }
+
 .panel h3 {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
   color: #c3c2b7;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.panel-collapsed .panel-header { margin-bottom: 0; }
+
+.panel-header:hover { background: none; }
+.panel-header:hover h3 { color: #ffffff; }
+
+.panel-toggle {
+  color: #898781;
+  font-size: 0.8rem;
+  flex: none;
+  margin-left: 0.5rem;
 }
 
 .analytics-grid {
@@ -333,4 +360,73 @@ tr.detail-row td {
 tr.detail-row .json-view {
   margin-top: 0;
   max-width: 700px;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .admin-wrap {
+    margin: 1.25rem auto;
+    padding: 0 0.75rem;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .admin-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .admin-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-actions button,
+  .admin-actions .button-link {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .list-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .group-toggle,
+  .result-count {
+    white-space: normal;
+  }
+
+  .panel {
+    padding: 0.75rem;
+  }
+
+  .map-wrap {
+    height: 260px;
+  }
+
+  th, td {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+
+  td.ellipsis {
+    max-width: 140px;
+  }
+
+  .json-view {
+    font-size: 0.78rem;
+  }
+
+  .nested-visit .json-view,
+  tr.detail-row .json-view {
+    max-width: 100%;
+  }
+
+  .modal {
+    padding: 1.25rem;
+  }
 }

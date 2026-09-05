@@ -54,6 +54,15 @@ const COLUMNS = [
   { key: "geo_isp", label: "ISP" },
 ];
 
+// Everything worth showing about one visit, as a single JSON object for
+// JsonView: every column (including geo/location fields, which live
+// alongside — not inside — headers_json) plus the parsed raw headers.
+// Strips fields that only exist on synthetic rows (grouped `visits`).
+function visitDetails(v) {
+  const { headers_json, visits, ...rest } = v;
+  return { ...rest, headers: JSON.parse(headers_json || "{}") };
+}
+
 // One row per unique IP: count + first/last seen, geo fields taken from
 // the most recent visit from that IP. Keeps the same field names as a
 // plain visit row (ts = last seen) so sorting/columns can treat both
@@ -75,6 +84,42 @@ function groupByIp(visits) {
       visits: byTsDesc,
     };
   });
+}
+
+// A panel that can be collapsed to just its header. Remembers its state
+// per-panel (via `id`) across reloads; collapsed panels don't render their
+// (potentially heavy — chart/map) children at all.
+function Panel({ id, title, children }) {
+  const storageKey = `admin.panel.${id}.collapsed`;
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  function toggle() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(storageKey, next ? "1" : "0");
+      } catch {
+        // ignore (private browsing / storage disabled)
+      }
+      return next;
+    });
+  }
+
+  return (
+    <section className={`panel${collapsed ? " panel-collapsed" : ""}`}>
+      <button type="button" className="panel-header" onClick={toggle}>
+        <h3>{title}</h3>
+        <span className="panel-toggle">{collapsed ? "▸" : "▾"}</span>
+      </button>
+      {!collapsed && <div className="panel-body">{children}</div>}
+    </section>
+  );
 }
 
 export default function Admin() {
@@ -311,24 +356,20 @@ export default function Admin() {
       )}
 
       <div className="analytics-grid">
-        <section className="panel">
-          <h3>Visits per day</h3>
+        <Panel id="visits-per-day" title="Visits per day">
           <VisitsOverTimeChart data={dayCounts} />
-        </section>
-        <section className="panel">
-          <h3>Top countries</h3>
+        </Panel>
+        <Panel id="top-countries" title="Top countries">
           <RankedBarChart data={topCountries} color="#3987e5" />
-        </section>
-        <section className="panel">
-          <h3>Top ISPs</h3>
+        </Panel>
+        <Panel id="top-isps" title="Top ISPs">
           <RankedBarChart data={topIsps} color="#d95926" />
-        </section>
+        </Panel>
       </div>
 
-      <section className="panel">
-        <h3>Map</h3>
+      <Panel id="map" title="Map">
         <MapView visits={visits} selectedId={selectedId} onSelect={setSelectedId} />
-      </section>
+      </Panel>
 
       <div className="list-controls">
         <input
@@ -462,7 +503,7 @@ function VisitRow({ v, isOpen, onToggle, isSelected, onSelect, colSpan }) {
       {isOpen && (
         <tr className="detail-row">
           <td colSpan={colSpan}>
-            <JsonView data={JSON.parse(v.headers_json || "{}")} />
+            <JsonView data={visitDetails(v)} />
           </td>
         </tr>
       )}
@@ -546,7 +587,7 @@ function VisitRowNested({ v, isOpen, onToggle }) {
         </button>
         <span>{new Date(v.ts * 1000).toLocaleString()}</span>
       </div>
-      {isOpen && <JsonView data={JSON.parse(v.headers_json || "{}")} />}
+      {isOpen && <JsonView data={visitDetails(v)} />}
     </div>
   );
 }
