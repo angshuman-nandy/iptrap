@@ -13,8 +13,13 @@ export default function Landing() {
       })
       .then(setDetails)
       .catch(() => setError("Could not load your details."));
-      window.location.replace("https://www.google.com");
   }, []);
 
-  return null;
+  return (
+    <div className="card landing">
+      <p>Hello visitor, your details are....</p>
+      {error && <p className="error">{error}</p>}
+      {details && <JsonView data={details} />}
+    </div>
+  );
 }
