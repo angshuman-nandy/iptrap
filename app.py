@@ -259,6 +259,15 @@ async def admin_export_csv(request: Request):
     )
 
 
+@app.delete("/api/admin/clear")
+async def admin_clear(request: Request):
+    if not check_admin(request):
+        return PlainTextResponse("forbidden", status_code=403)
+    with closing(get_db()) as conn, conn:
+        conn.execute("DELETE FROM visits")
+    return JSONResponse({"ok": True})
+
+
 @app.get("/healthz")
 async def healthz():
     return {"ok": True}

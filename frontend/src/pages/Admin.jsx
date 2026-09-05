@@ -66,6 +66,10 @@ export default function Admin() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState("ts");
   const [sortDir, setSortDir] = useState("desc");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearPassword, setClearPassword] = useState("");
+  const [clearError, setClearError] = useState("");
+  const [clearing, setClearing] = useState(false);
 
   async function fetchVisits(pw) {
     const res = await fetch("/api/admin/visits", {
@@ -110,6 +114,40 @@ export default function Admin() {
       }
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  function openClearConfirm() {
+    setClearPassword("");
+    setClearError("");
+    setShowClearConfirm(true);
+  }
+
+  async function handleClearConfirm(e) {
+    e.preventDefault();
+    setClearing(true);
+    setClearError("");
+    try {
+      const res = await fetch("/api/admin/clear", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${clearPassword}` },
+      });
+      if (res.status === 403) {
+        setClearError("Wrong password.");
+        return;
+      }
+      if (!res.ok) {
+        setClearError(`Unexpected error (${res.status}).`);
+        return;
+      }
+      setVisits([]);
+      setSelectedId(null);
+      setShowClearConfirm(false);
+      setClearPassword("");
+    } catch {
+      setClearError("Could not reach the server.");
+    } finally {
+      setClearing(false);
     }
   }
 
@@ -189,9 +227,46 @@ export default function Admin() {
           >
             Download CSV
           </a>
+          <button className="button-danger" onClick={openClearConfirm}>
+            Clear records
+          </button>
         </div>
       </div>
       {error && <p className="error">{error}</p>}
+
+      {showClearConfirm && (
+        <div className="modal-overlay" onClick={() => setShowClearConfirm(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Clear all records?</h3>
+            <p>
+              This permanently deletes all {visits.length} captured visit
+              {visits.length === 1 ? "" : "s"}. Re-enter the admin password to confirm.
+            </p>
+            <form onSubmit={handleClearConfirm}>
+              <input
+                type="password"
+                placeholder="Password"
+                value={clearPassword}
+                onChange={(e) => setClearPassword(e.target.value)}
+                autoFocus
+              />
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="button-secondary"
+                  onClick={() => setShowClearConfirm(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="button-danger" disabled={clearing}>
+                  {clearing ? "Clearing..." : "Delete all records"}
+                </button>
+              </div>
+            </form>
+            {clearError && <p className="error">{clearError}</p>}
+          </div>
+        </div>
+      )}
 
       <div className="analytics-grid">
         <section className="panel">
