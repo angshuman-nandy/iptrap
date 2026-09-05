@@ -408,13 +408,23 @@ tr.detail-row .json-view {
     height: 260px;
   }
 
-  th, td {
-    padding: 5px 8px;
-    font-size: 0.8rem;
+  /* Keep only the essentials in the table — date, IP, location, ISP (plus
+     the expand toggle and, when grouped, the visit count). Everything
+     else is still in the expanded JSON. */
+  .col-extra {
+    display: none;
   }
 
-  td.ellipsis {
-    max-width: 140px;
+  th, td {
+    padding: 14px 10px;
+    font-size: 0.95rem;
+  }
+
+  /* Bigger tap target for the expand arrow. */
+  .expand-btn {
+    font-size: 1.2rem;
+    padding: 10px 12px;
+    line-height: 1;
   }
 
   .json-view {

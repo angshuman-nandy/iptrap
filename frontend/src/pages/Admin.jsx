@@ -411,13 +411,13 @@ export default function Admin() {
                   {sortKey === "count" && (sortDir === "asc" ? " ▲" : " ▼")}
                 </th>
               )}
-              <th>Zip</th>
-              <th>Coordinates</th>
-              <th>Org</th>
-              <th>ASN</th>
-              <th>Language</th>
-              <th>Referer</th>
-              <th>User agent</th>
+              <th className="col-extra">Zip</th>
+              <th className="col-extra">Coordinates</th>
+              <th className="col-extra">Org</th>
+              <th className="col-extra">ASN</th>
+              <th className="col-extra">Language</th>
+              <th className="col-extra">Referer</th>
+              <th className="col-extra">User agent</th>
             </tr>
           </thead>
           <tbody>
@@ -479,8 +479,8 @@ function VisitRow({ v, isOpen, onToggle, isSelected, onSelect, colSpan }) {
         <td>{v.geo_country}</td>
         <td>{v.geo_city}</td>
         <td>{v.geo_isp}</td>
-        <td>{v.geo_zip}</td>
-        <td>
+        <td className="col-extra">{v.geo_zip}</td>
+        <td className="col-extra">
           {hasCoords ? (
             <a
               href={`https://www.google.com/maps?q=${v.geo_lat},${v.geo_lon}`}
@@ -494,11 +494,11 @@ function VisitRow({ v, isOpen, onToggle, isSelected, onSelect, colSpan }) {
             ""
           )}
         </td>
-        <td>{v.geo_org}</td>
-        <td>{v.geo_as}</td>
-        <td>{v.accept_language}</td>
-        <td className="ellipsis">{v.referer}</td>
-        <td className="ellipsis">{v.user_agent}</td>
+        <td className="col-extra">{v.geo_org}</td>
+        <td className="col-extra">{v.geo_as}</td>
+        <td className="col-extra">{v.accept_language}</td>
+        <td className="col-extra ellipsis">{v.referer}</td>
+        <td className="col-extra ellipsis">{v.user_agent}</td>
       </tr>
       {isOpen && (
         <tr className="detail-row">
@@ -537,8 +537,8 @@ function GroupRow({ group, isOpen, onToggle, expanded, onToggleVisit, selectedId
         <td>{group.geo_city}</td>
         <td>{group.geo_isp}</td>
         <td>{group.count}</td>
-        <td>{group.geo_zip}</td>
-        <td>
+        <td className="col-extra">{group.geo_zip}</td>
+        <td className="col-extra">
           {hasCoords ? (
             <a
               href={`https://www.google.com/maps?q=${group.geo_lat},${group.geo_lon}`}
@@ -552,11 +552,11 @@ function GroupRow({ group, isOpen, onToggle, expanded, onToggleVisit, selectedId
             ""
           )}
         </td>
-        <td>{group.geo_org}</td>
-        <td>{group.geo_as}</td>
-        <td>{group.accept_language}</td>
-        <td className="ellipsis">{group.referer}</td>
-        <td className="ellipsis">{group.user_agent}</td>
+        <td className="col-extra">{group.geo_org}</td>
+        <td className="col-extra">{group.geo_as}</td>
+        <td className="col-extra">{group.accept_language}</td>
+        <td className="col-extra ellipsis">{group.referer}</td>
+        <td className="col-extra ellipsis">{group.user_agent}</td>
       </tr>
       {isOpen && (
         <tr className="detail-row">
