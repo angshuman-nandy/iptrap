@@ -78,7 +78,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 .error { color: #f87171; }
 
 .admin-wrap {
-  max-width: 1000px;
+  max-width: 1300px;
   margin: 3rem auto;
   padding: 0 1.5rem;
 }
@@ -89,6 +89,107 @@ button:disabled { opacity: 0.6; cursor: default; }
   justify-content: space-between;
   margin-bottom: 1rem;
 }
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-actions button {
+  background: #1a1b1e;
+  border: 1px solid #2a2b2e;
+}
+
+.admin-actions button:hover { background: #22242a; }
+
+.panel {
+  background: #16171a;
+  border: 1px solid #2a2b2e;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.panel h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #c3c2b7;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 900px) {
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+
+.map-wrap {
+  height: 360px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.map-wrap .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #1a1a19;
+}
+
+.marker-selected { filter: hue-rotate(140deg) saturate(1.4); }
+
+.map-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #898781;
+  font-size: 0.9rem;
+}
+
+.chart-tooltip {
+  background: #1a1a19;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+.chart-tooltip-label { color: #898781; }
+.chart-tooltip-value { color: #ffffff; font-weight: 600; }
+
+.list-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #1a1b1e;
+  color: #e6e6e6;
+  font-size: 0.9rem;
+}
+
+.result-count {
+  color: #898781;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+th.sortable:hover { color: #ffffff; }
+
+tr.row-selected td { background: #1e2a3d; }
 
 .table-wrap {
   overflow-x: auto;
@@ -116,6 +217,10 @@ td.ellipsis {
 }
 
 th { background: #16171a; position: sticky; top: 0; }
+
+tbody tr:not(.detail-row) { cursor: pointer; }
+tbody tr:not(.detail-row):hover td { background: #1c1d21; }
+tr.row-selected:hover td { background: #223250; }
 
 .expand-btn {
   background: none;
