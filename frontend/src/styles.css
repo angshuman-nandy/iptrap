@@ -109,10 +109,29 @@ th, td {
   white-space: nowrap;
 }
 
-td.ua {
-  max-width: 320px;
+td.ellipsis {
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-th { background: #16171a; }
+th { background: #16171a; position: sticky; top: 0; }
+
+.expand-btn {
+  background: none;
+  padding: 0 4px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.expand-btn:hover { background: none; color: #e6e6e6; }
+
+tr.detail-row td {
+  background: #0f1013;
+  white-space: normal;
+}
+
+tr.detail-row .json-view {
+  margin-top: 0;
+  max-width: 700px;
+}
