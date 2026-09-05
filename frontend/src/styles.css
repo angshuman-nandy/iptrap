@@ -139,6 +139,12 @@ button:disabled { opacity: 0.6; cursor: default; }
   background: #1a1a19;
 }
 
+/* Standard OSM tiles are light — invert just the tile layer (not markers/
+   popups/controls) to approximate a dark map without a paid tile provider. */
+.map-wrap .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+
 .marker-selected { filter: hue-rotate(140deg) saturate(1.4); }
 
 .map-empty {

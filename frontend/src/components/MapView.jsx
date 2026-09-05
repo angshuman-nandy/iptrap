@@ -15,6 +15,11 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+// Always pass a concrete icon instance to <Marker icon={...}> — passing
+// `undefined` there overrides Leaflet's internal default-icon fallback
+// with `undefined` instead of leaving it unset, which crashes _initIcon.
+const defaultIcon = new L.Icon.Default();
+
 const selectedIcon = new L.Icon({
   iconUrl: markerIcon,
   iconRetinaUrl: markerIcon2x,
@@ -59,15 +64,15 @@ export default function MapView({ visits, selectedId, onSelect }) {
     <div className="map-wrap">
       <MapContainer center={center} zoom={2} scrollWheelZoom={true}>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FlyToSelected selected={selected} />
         {located.map((v) => (
           <Marker
             key={v.id}
             position={[v.geo_lat, v.geo_lon]}
-            icon={v.id === selectedId ? selectedIcon : undefined}
+            icon={v.id === selectedId ? selectedIcon : defaultIcon}
             eventHandlers={{ click: () => onSelect(v.id) }}
             ref={(el) => {
               if (el) markerRefs.current[v.id] = el;
